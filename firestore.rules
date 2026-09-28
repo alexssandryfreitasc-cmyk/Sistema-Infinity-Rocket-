@@ -1,0 +1,399 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isCurrentUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return getUserData().role;
+    }
+
+    function getUserStatus() {
+      return getUserData().status;
+    }
+
+    function getUserClientId() {
+      return getUserData().clientId;
+    }
+
+    // 1. ADMIN: Master root email, admins collection, or active ADMIN role in users collection
+    function isAdmin() {
+      return isSignedIn() && (
+        ('email' in request.auth.token && request.auth.token.email == 'alexssandryfreitasc@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (hasUserDoc() && getUserRole() == 'ADMIN' && getUserStatus() == 'ATIVO')
+      );
+    }
+
+    // 2. GESTOR: Active manager role
+    function isGestor() {
+      return hasUserDoc() && getUserRole() == 'GESTOR' && getUserStatus() == 'ATIVO';
+    }
+
+    // 3. COLABORADOR: Active collaborator role
+    function isColaborador() {
+      return hasUserDoc() && getUserRole() == 'COLABORADOR' && getUserStatus() == 'ATIVO';
+    }
+
+    // 4. CLIENTE: Active external client role
+    function isCliente() {
+      return hasUserDoc() && getUserRole() == 'CLIENTE' && getUserStatus() == 'ATIVO';
+    }
+
+    // Agency Staff: Admin, Gestor, or Colaborador (internal agency team)
+    function isAgencyStaff() {
+      return isAdmin() || isGestor() || isColaborador();
+    }
+
+    // Agency Management: Admin or Gestor
+    function isAgencyManager() {
+      return isAdmin() || isGestor();
+    }
+
+    // Check if the current user is a Client belonging to a specific client ID
+    function isClientOf(clientId) {
+      return isCliente() && getUserClientId() == clientId;
+    }
+
+    // ==========================================
+    // 1. ADMINS COLLECTION
+    // ==========================================
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 2. USERS COLLECTION
+    // ==========================================
+    match /users/{userId} {
+      // Internal staff can list and get any user; Clients can only get their own profile
+      allow get: if isSignedIn() && (isCurrentUser(userId) || isAgencyStaff());
+      allow list: if isAgencyStaff();
+
+      function hasNoUserSecrets() {
+        return !incoming().keys().hasAny(['password', 'passwordHash', 'token', 'secret', 'passwordOrToken']);
+      }
+
+      // Creation:
+      // - Admin can create any user
+      // - Self-registration: forced role COLABORADOR or CLIENTE, forced status PENDENTE_APROVACAO
+      allow create: if isSignedIn() && isValidId(userId) && hasNoUserSecrets() && (
+        isAdmin() ||
+        (
+          isCurrentUser(userId) &&
+          (incoming().role == 'COLABORADOR' || incoming().role == 'CLIENTE') &&
+          incoming().role != 'ADMIN' &&
+          incoming().role != 'GESTOR' &&
+          incoming().status == 'PENDENTE_APROVACAO'
+        )
+      );
+
+      // Updating:
+      // - ADMIN has full update permissions (can change roles, status, clientId, etc.)
+      // - GESTOR can update team operational details (e.g. title, department, phone, avatar),
+      //   but CANNOT change role, status, or clientId of anyone, and CANNOT touch ADMIN accounts.
+      // - Regular user can only update safe profile fields on their own profile, never role, status, or clientId.
+      allow update: if isSignedIn() && isValidId(userId) && hasNoUserSecrets() && (
+        isAdmin() ||
+        (
+          isGestor() &&
+          existing().role != 'ADMIN' &&
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'status', 'clientId'])
+        ) ||
+        (
+          isCurrentUser(userId) &&
+          !incoming().diff(existing()).affectedKeys().hasAny(['role', 'status', 'clientId'])
+        )
+      );
+
+      // Deletion: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 3. CLIENTS COLLECTION
+    // ==========================================
+    match /clients/{clientId} {
+      // Read: Agency staff can view all clients; Clients can ONLY get their own record directly
+      allow get: if isAgencyStaff() || isClientOf(clientId);
+      allow list: if isAgencyStaff();
+
+      // Create / Update: Admin & Gestor
+      allow create, update: if isAgencyManager() && isValidId(clientId);
+
+      // Delete: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 4. TASKS COLLECTION (Tarefas Internas)
+    // ==========================================
+    match /tasks/{taskId} {
+      // Read: ONLY Agency Staff (Clients have ZERO access to internal tasks)
+      allow get, list: if isAgencyStaff();
+
+      // Create / Update: Agency Staff (Collaborators, Gestores, Admins)
+      allow create, update: if isAgencyStaff() && isValidId(taskId);
+
+      // Delete: ONLY Admin & Gestor (Collaborators cannot delete tasks)
+      allow delete: if isAgencyManager() && isValidId(taskId);
+    }
+
+    // ==========================================
+    // 5. CONTENTS COLLECTION (Conteúdos & Calendário)
+    // ==========================================
+    match /contents/{contentId} {
+      // Read: Agency staff sees all; Clients can ONLY access their own client contents
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create: Agency Staff ONLY (Clients cannot create draft posts)
+      allow create: if isAgencyStaff() && isValidId(contentId);
+
+      // Update:
+      // - Agency staff can update all operational details
+      // - Clients can ONLY update approval status and review feedback/comments for their own contents
+      allow update: if isValidId(contentId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          resource.data.clientId == getUserClientId() &&
+          incoming().clientId == resource.data.clientId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'approvalHistory', 'revisionRequestReason', 'currentVersion'])
+        )
+      );
+
+      // Delete: ONLY Admin & Gestor
+      allow delete: if isAgencyManager() && isValidId(contentId);
+    }
+
+    // ==========================================
+    // 6. TICKETS COLLECTION (Chamados & Suporte)
+    // ==========================================
+    match /tickets/{ticketId} {
+      // Read: Agency staff sees all tickets; Clients see ONLY their own tickets
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create:
+      // - Agency staff can open tickets
+      // - Clients can open tickets for their own client ID
+      allow create: if isValidId(ticketId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          incoming().clientId == getUserClientId() &&
+          incoming().createdById == request.auth.uid
+        )
+      );
+
+      // Update:
+      // - Agency staff can update/respond to tickets
+      // - Clients can only update client response/feedback fields and resolution status of their own tickets
+      allow update: if isValidId(ticketId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          resource.data.clientId == getUserClientId() &&
+          incoming().clientId == resource.data.clientId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'resolvedAt', 'clientResponse', 'comments', 'response'])
+        )
+      );
+
+      // Delete: ONLY Admin & Gestor
+      allow delete: if isAgencyManager() && isValidId(ticketId);
+    }
+
+    // ==========================================
+    // 7. FINANCIALS COLLECTION (MRR e Contratos)
+    // ==========================================
+    match /financials/{financialId} {
+      // Read: ONLY Admin & Gestor (Collaborators and Clients are FORBIDDEN)
+      allow get, list: if isAgencyManager();
+
+      // Create / Update: ONLY Admin & Gestor
+      allow create, update: if isAgencyManager() && isValidId(financialId);
+
+      // Delete: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 8. TRANSACTIONS COLLECTION (Fluxo de Caixa)
+    // ==========================================
+    match /transactions/{transactionId} {
+      // Read: ONLY Admin & Gestor (Collaborators and Clients are FORBIDDEN)
+      allow get, list: if isAgencyManager();
+
+      // Create / Update: ONLY Admin & Gestor
+      allow create, update: if isAgencyManager() && isValidId(transactionId);
+
+      // Delete: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 9. MEETINGS COLLECTION (Reuniões)
+    // ==========================================
+    match /meetings/{meetingId} {
+      // Read: Agency staff sees all; Clients see only meetings of their clientId
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create / Update: Agency Staff
+      allow create, update: if isAgencyStaff() && isValidId(meetingId);
+
+      // Delete: ONLY Admin & Gestor
+      allow delete: if isAgencyManager() && isValidId(meetingId);
+    }
+
+    // ==========================================
+    // 10. BRIEFINGS COLLECTION (Briefings & Onboarding)
+    // ==========================================
+    match /briefings/{briefingId} {
+      // Read: Agency staff sees all; Clients see only their own briefing
+      allow get, list: if isAgencyStaff() || (isCliente() && (resource.data.clientId == getUserClientId() || briefingId == getUserClientId()));
+
+      // Create / Update:
+      // - Agency staff can create and update
+      // - Client can submit and update their own briefing questionnaire
+      allow create, update: if isValidId(briefingId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          (incoming().clientId == getUserClientId() || briefingId == getUserClientId())
+        )
+      );
+
+      // Delete: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 11. ACCESSES COLLECTION (Credenciais & Acessos Delegados)
+    // ==========================================
+    match /accesses/{accessId} {
+      // Prohibit plaintext secrets (passwords, tokens, raw secrets)
+      function hasNoPlaintextSecrets() {
+        return !incoming().keys().hasAny(['password', 'passwordOrToken', 'secret', 'token']);
+      }
+
+      // Read: Agency staff sees all; Clients see only their own credentials
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create / Update:
+      // - Agency staff can create and update credentials (without plaintext secrets)
+      // - Clients can register and manage delegated accesses for their own company
+      allow create, update: if isValidId(accessId) && hasNoPlaintextSecrets() && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          incoming().clientId == getUserClientId()
+        )
+      );
+
+      // Delete: ONLY Admin
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 12. DOCUMENTS COLLECTION (Arquivos & Anexos)
+    // ==========================================
+    match /documents/{documentId} {
+      // Read: Agency staff sees all; Clients see only files of their clientId
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create:
+      // - Agency staff can upload files
+      // - Clients can upload assets for their own clientId
+      allow create: if isValidId(documentId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          incoming().clientId == getUserClientId()
+        )
+      );
+
+      // Update: Agency staff, or Client on their own files without altering clientId
+      allow update: if isValidId(documentId) && (
+        isAgencyStaff() ||
+        (
+          isCliente() &&
+          resource.data.clientId == getUserClientId() &&
+          incoming().clientId == resource.data.clientId
+        )
+      );
+
+      // Delete: ONLY Admin & Gestor
+      allow delete: if isAgencyManager() && isValidId(documentId);
+    }
+
+    // ==========================================
+    // 13. REPORTS COLLECTION (Relatórios Mensais)
+    // ==========================================
+    match /reports/{reportId} {
+      // Read: Agency staff sees all; Clients see only reports of their clientId
+      allow get, list: if isAgencyStaff() || (isCliente() && resource.data.clientId == getUserClientId());
+
+      // Create / Update: Agency Staff
+      allow create, update: if isAgencyStaff() && isValidId(reportId);
+
+      // Delete: ONLY Admin & Gestor
+      allow delete: if isAgencyManager() && isValidId(reportId);
+    }
+
+    // ==========================================
+    // 14. AUDIT LOGS COLLECTION (Auditoria)
+    // ==========================================
+    match /auditLogs/{logId} {
+      // Read: ONLY Admin & Gestor
+      allow get, list: if isAgencyManager();
+
+      // Create: Agency Staff (logs their own activities)
+      allow create: if isAgencyStaff() && isValidId(logId);
+
+      // Update / Delete: NEVER (Immutable security audit trail)
+      allow update, delete: if false;
+    }
+
+    // ==========================================
+    // 15. NOTIFICATIONS COLLECTION
+    // ==========================================
+    match /notifications/{notificationId} {
+      allow get, list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow create: if isAgencyStaff() && isValidId(notificationId);
+      allow update: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid && !incoming().diff(existing()).affectedKeys().hasAny(['userId'])));
+      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+    }
+  }
+}

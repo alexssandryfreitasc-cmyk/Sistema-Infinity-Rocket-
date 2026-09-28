@@ -1,0 +1,6 @@
+{
+  "name": "AgencyOS",
+  "description": "Sistema Operacional Completo para Agências de Marketing Digital: Integração com Google Drive para Documentos e Ativos, Pipeline Operacional, Onboarding, Acessos Seguros, Aprovação de Conteúdo, Tarefas, Financeiro e Gestão de Equipe.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

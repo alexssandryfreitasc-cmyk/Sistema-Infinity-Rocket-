@@ -1,0 +1,174 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Perfil de usuário da agência ou cliente",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["ADMIN", "GESTOR", "COLABORADOR", "CLIENTE"] },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "title": { "type": "string", "maxLength": 100 },
+        "department": { "type": "string", "maxLength": 100 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["ATIVO", "PENDENTE_APROVACAO"] },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Cadastro de cliente corporativo da agência",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "companyName": { "type": "string", "maxLength": 150 },
+        "tradingName": { "type": "string", "maxLength": 150 },
+        "contactName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "whatsapp": { "type": "string", "maxLength": 50 },
+        "cnpj": { "type": "string", "maxLength": 30 },
+        "segment": { "type": "string", "maxLength": 80 },
+        "city": { "type": "string", "maxLength": 80 },
+        "instagram": { "type": "string", "maxLength": 100 },
+        "plan": { "type": "string", "enum": ["BASICO", "PRO", "PREMIUM", "ENTERPRISE"] },
+        "monthlyValue": { "type": "number" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "renewalDate": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["ONBOARDING", "ATIVO", "EM_RISCO", "PENDENTE", "CANCELADO"] },
+        "pipelineStage": { "type": "string", "maxLength": 50 },
+        "healthScore": { "type": "number" },
+        "onboardingProgress": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "companyName", "tradingName", "email", "plan", "monthlyValue"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Tarefa operacional da agência",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 3000 },
+        "assignedToId": { "type": "string", "maxLength": 128 },
+        "priority": { "type": "string", "enum": ["BAIXA", "NORMAL", "MEDIA", "ALTA", "URGENTE"] },
+        "dueDate": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["A_FAZER", "EM_ANDAMENTO", "REVISAO_INTERNA", "AGUARDANDO_CLIENTE", "AGUARDANDO", "CONCLUIDA", "CANCELADA"] },
+        "category": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "clientId", "title", "dueDate", "status"]
+    },
+    "ContentItem": {
+      "title": "ContentItem",
+      "description": "Item de calendário editorial e postagem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "scheduledDate": { "type": "string", "maxLength": 30 },
+        "format": { "type": "string", "enum": ["CARROSSEL", "REELS", "ESTATICO", "STORIES", "VIDEO", "ARTIGO", "ANUNCIO"] },
+        "platform": { "type": "string", "enum": ["INSTAGRAM", "FACEBOOK", "TIKTOK", "YOUTUBE", "LINKEDIN", "GOOGLE"] },
+        "caption": { "type": "string", "maxLength": 5000 },
+        "visualBriefing": { "type": "string", "maxLength": 3000 },
+        "mediaUrl": { "type": "string", "maxLength": 1000 },
+        "responsibleId": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["IDEIA", "BRIEFING", "PRODUCAO", "REVISAO_INTERNA", "AGUARDANDO_CLIENTE", "APROVADO", "REPROVADO", "AGENDADO", "PUBLICADO"] },
+        "currentVersion": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "clientId", "title", "scheduledDate", "format", "platform", "status"]
+    },
+    "Meeting": {
+      "title": "Meeting",
+      "description": "Reunião agendada com cliente ou equipe",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "date": { "type": "string", "maxLength": 30 },
+        "time": { "type": "string", "maxLength": 20 },
+        "durationMinutes": { "type": "number" },
+        "type": { "type": "string", "enum": ["ONBOARDING", "REUNIAO_MENSAL", "ESTRATEGIA", "COMERCIAL", "EXTRA", "ALINHAMENTO"] },
+        "meetingUrl": { "type": "string", "maxLength": 500 },
+        "notes": { "type": "string", "maxLength": 3000 },
+        "status": { "type": "string", "enum": ["AGENDADA", "CONCLUIDA", "CANCELADA"] }
+      },
+      "required": ["id", "clientId", "title", "date", "time", "status"]
+    },
+    "FinancialRecord": {
+      "title": "FinancialRecord",
+      "description": "Contrato e faturamento recorrente (MRR)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "plan": { "type": "string", "enum": ["BASICO", "PRO", "PREMIUM", "ENTERPRISE"] },
+        "monthlyValue": { "type": "number" },
+        "billingDay": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["PIX", "BOLETO", "CARTAO", "TRANSFERENCIA"] },
+        "status": { "type": "string", "enum": ["ATIVO", "PENDENTE", "ATRASADO", "CANCELADO"] },
+        "lastPaymentDate": { "type": "string", "maxLength": 30 },
+        "nextPaymentDate": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["id", "clientId", "plan", "monthlyValue", "billingDay", "paymentMethod", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Lançamento de fluxo de caixa (entrada ou saída)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["INCOME", "EXPENSE"] },
+        "description": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["PAID", "PENDING", "OVERDUE", "CANCELLED"] },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "type", "description", "category", "amount", "date", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Perfis dos usuários cadastrados no AgencyOS"
+    },
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Clientes gerenciados pela agência"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Tarefas operacionais vinculadas aos clientes"
+    },
+    "/contents/{contentId}": {
+      "schema": "ContentItem",
+      "description": "Publicações e calendário editorial"
+    },
+    "/meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Reuniões agendadas com pautas e atas"
+    },
+    "/financials/{financialId}": {
+      "schema": "FinancialRecord",
+      "description": "Assinaturas e controle de receita recorrente (MRR)"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Entradas e despesas do fluxo de caixa"
+    }
+  }
+}

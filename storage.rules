@@ -1,0 +1,77 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        ('email' in request.auth.token && request.auth.token.email == 'alexssandryfreitasc@gmail.com') ||
+        ('role' in request.auth.token && request.auth.token.role == 'ADMIN' &&
+         (!('status' in request.auth.token) || request.auth.token.status == 'ATIVO')) ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
+        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'ATIVO')
+      );
+    }
+
+    function isAgencyStaff() {
+      return isSignedIn() && (
+        isAdmin() ||
+        ('role' in request.auth.token &&
+         (request.auth.token.role == 'GESTOR' || request.auth.token.role == 'COLABORADOR') &&
+         (!('status' in request.auth.token) || request.auth.token.status == 'ATIVO')) ||
+        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'ATIVO' &&
+         (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'GESTOR' ||
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'COLABORADOR'))
+      );
+    }
+
+    function isClientOf(clientId) {
+      return isSignedIn() && (
+        ('role' in request.auth.token && request.auth.token.role == 'CLIENTE' &&
+         (!('status' in request.auth.token) || request.auth.token.status == 'ATIVO') &&
+         ('clientId' in request.auth.token && request.auth.token.clientId == clientId)) ||
+        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'CLIENTE' &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'ATIVO' &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.clientId == clientId)
+      );
+    }
+
+    function isValidFileSize() {
+      return request.resource.size < 50 * 1024 * 1024; // 50MB max file size
+    }
+
+    function isAllowedMimeType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*') ||
+             request.resource.contentType.matches('audio/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/vnd.ms-excel') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('text/plain') ||
+             request.resource.contentType.matches('application/zip');
+    }
+
+    // Client-scoped files: /clients/{clientId}/{allPaths=**}
+    match /clients/{clientId}/{allPaths=**} {
+      allow read: if isAgencyStaff() || isClientOf(clientId);
+      allow create, update: if (isAgencyStaff() || isClientOf(clientId)) &&
+                            isValidFileSize() &&
+                            isAllowedMimeType();
+      allow delete: if isAgencyStaff();
+    }
+
+    // Public / Brand assets readable by authenticated users, writable only by agency staff
+    match /brand-assets/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isAgencyStaff() && isValidFileSize() && isAllowedMimeType();
+    }
+  }
+}
