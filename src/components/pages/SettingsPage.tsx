@@ -84,7 +84,7 @@ export const SettingsPage: React.FC = () => {
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute(
       'download',
-      `AgencyOS_Backup_${new Date().toISOString().split('T')[0]}.json`
+      `InfinityRocket_Backup_${new Date().toISOString().split('T')[0]}.json`
     );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();

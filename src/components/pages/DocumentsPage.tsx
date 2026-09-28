@@ -153,7 +153,7 @@ export const DocumentsPage: React.FC = () => {
     }
   };
 
-  // Import / Link File from Google Drive to AgencyOS
+  // Import / Link File from Google Drive to InfinityRocket
   const handleLinkDriveFile = (file: DriveFileItem, targetClientId: string) => {
     const matchedClient = clients.find((c) => c.id === targetClientId) || activeClient || clients[0];
     
@@ -708,7 +708,7 @@ export const DocumentsPage: React.FC = () => {
                 <div>
                   <h3 className="text-sm font-bold text-white">Explorador de Arquivos do Google Drive</h3>
                   <p className="text-[11px] text-gray-400">
-                    Selecione arquivos do seu Drive para vincular diretamente ao AgencyOS.
+                    Selecione arquivos do seu Drive para vincular diretamente ao InfinityRocket.
                   </p>
                 </div>
               </div>
@@ -809,7 +809,7 @@ export const DocumentsPage: React.FC = () => {
                         onClick={() => handleLinkDriveFile(file, selectedClient === 'TODOS' ? activeClient?.id || clients[0]?.id || '' : selectedClient)}
                         className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition-colors cursor-pointer"
                       >
-                        Vincular ao AgencyOS
+                        Vincular ao InfinityRocket
                       </button>
                     </div>
                   </div>

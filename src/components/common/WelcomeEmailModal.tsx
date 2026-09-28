@@ -74,17 +74,17 @@ export const WelcomeEmailModal: React.FC<WelcomeEmailModalProps> = ({ client, on
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Assunto:</span>
-              <span className="text-emerald-400 font-semibold">Bem-vindo(a) à AgencyOS! Vamos cuidar do seu marketing 🚀</span>
+              <span className="text-emerald-400 font-semibold">Bem-vindo(a) à InfinityRocket! Vamos cuidar do seu marketing 🚀</span>
             </div>
           </div>
 
           {/* Email Body */}
           <div className="p-6 rounded-lg bg-gray-800 border border-gray-700 space-y-4 text-gray-200 text-sm leading-relaxed">
             <div className="flex items-center space-x-2 pb-3 border-b border-gray-700">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-black text-xs">
-                AO
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-xs">
+                IR
               </div>
-              <span className="font-bold text-white">AgencyOS • Operação Digital</span>
+              <span className="font-bold text-white">InfinityRocket • Operação Digital</span>
             </div>
 
             <p className="text-base font-semibold text-white">

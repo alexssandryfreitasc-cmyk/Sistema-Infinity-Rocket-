@@ -52,7 +52,7 @@ const MainLayout: React.FC = () => {
         <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
           <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
         </div>
-        <div className="text-sm font-semibold text-white tracking-wide">AgencyOS</div>
+        <div className="text-sm font-semibold text-white tracking-wide">InfinityRocket</div>
         <p className="text-xs text-gray-400 mt-1">Verificando sessão segura no Firebase Auth...</p>
       </div>
     );

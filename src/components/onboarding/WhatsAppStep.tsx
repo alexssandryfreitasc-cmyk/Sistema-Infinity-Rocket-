@@ -23,20 +23,20 @@ export const WhatsAppStep: React.FC<WhatsAppStepProps> = ({ client }) => {
   const [copiedWelcome, setCopiedWelcome] = useState(false);
   const [copiedName, setCopiedName] = useState(false);
 
-  const suggestedGroupName = `AgencyOS + ${client.tradingName}`;
+  const suggestedGroupName = `InfinityRocket + ${client.tradingName}`;
 
-  const welcomeMessageTemplate = `🚀 *Bem-vindos à AgencyOS!*
+  const welcomeMessageTemplate = `🚀 *Bem-vindos à InfinityRocket!*
 
 Olá equipe *${client.tradingName}*! É um grande prazer iniciarmos essa parceria para acelerar os resultados e a presença digital de vocês.
 
 📌 *Informações Importantes do Grupo:*
 • Horário de atendimento: Segunda a Sexta, das 09h às 18h
-• Gestor(a) da conta: ${users.find((u) => u.id === client.team.accountManagerId)?.name || 'Equipe AgencyOS'}
+• Gestor(a) da conta: ${users.find((u) => u.id === client.team.accountManagerId)?.name || 'Equipe InfinityRocket'}
 • Aprovação de conteúdos e chamados oficiais: Utilize o nosso Portal do Cliente.
 
 🔗 *Acesso ao seu Portal Oficial:*
 Acesse para acompanhar o onboarding, enviar acessos e aprovar artes em 1 clique:
-https://agencyos.digital/portal
+https://infinityrocket.digital/portal
 
 Qualquer dúvida urgente durante horário comercial, estamos sempre à disposição aqui no grupo!`;
 

@@ -255,7 +255,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNewClient, onOpenSearch })
           {/* Logout Button */}
           <button
             onClick={() => {
-              if (window.confirm('Deseja encerrar sua sessão no AgencyOS?')) {
+              if (window.confirm('Deseja encerrar sua sessão no InfinityRocket?')) {
                 logout();
               }
             }}

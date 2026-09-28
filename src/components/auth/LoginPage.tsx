@@ -17,7 +17,8 @@ import {
   Phone,
   HelpCircle,
   AlertCircle,
-  Database
+  Database,
+  Rocket
 } from 'lucide-react';
 import { useAgency } from '../../context/AgencyContext';
 import { UserRole } from '../../types';
@@ -46,18 +47,37 @@ export const LoginPage: React.FC = () => {
   const [regDepartment, setRegDepartment] = useState('Operações');
   const [regCompany, setRegCompany] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('COLABORADOR');
+  const [isPopupBlocked, setIsPopupBlocked] = useState(false);
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (useRedirect: boolean = false) => {
     setError(null);
     setSuccessMessage(null);
+    setIsPopupBlocked(false);
     setIsGoogleLoading(true);
     try {
-      const res = await loginWithGoogle();
+      const res = await loginWithGoogle(useRedirect);
       if (!res.success) {
-        setError(res.message || 'Falha ao autenticar com Google.');
+        const msg = res.message || '';
+        if (msg === 'auth/popup-blocked' || msg.includes('popup-blocked')) {
+          setIsPopupBlocked(true);
+          setError('O navegador bloqueou a janela pop-up do Google.');
+        } else if (msg.includes('unauthorized-domain')) {
+          setError('Domínio não autorizado no Firebase. Adicione este domínio no Firebase Console > Authentication > Configurações > Domínios Autorizados.');
+        } else {
+          setError(msg || 'Falha ao autenticar com Google.');
+        }
       }
     } catch (err: any) {
-      setError(err?.message || 'Erro ao realizar login via Google.');
+      const msg = err?.message || '';
+      const code = err?.code || '';
+      if (code === 'auth/popup-blocked' || msg.includes('popup-blocked')) {
+        setIsPopupBlocked(true);
+        setError('O navegador bloqueou a janela pop-up do Google.');
+      } else if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+        setError('Domínio não autorizado no Firebase. Adicione este domínio no Firebase Console > Authentication > Configurações > Domínios Autorizados.');
+      } else {
+        setError(msg || 'Erro ao realizar login via Google.');
+      }
     } finally {
       setIsGoogleLoading(false);
     }
@@ -175,12 +195,12 @@ export const LoginPage: React.FC = () => {
       {/* Top Bar Brand */}
       <header className="h-16 px-6 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-400 flex items-center justify-center font-black text-black text-base shadow-lg shadow-indigo-500/20">
-            A
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-400 flex items-center justify-center font-black text-white text-base shadow-lg shadow-indigo-500/20">
+            <Rocket className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="font-extrabold text-sm tracking-tight text-white flex items-center space-x-1.5">
-              <span>AgencyOS</span>
+              <span>InfinityRocket</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 font-semibold border border-indigo-500/20">
                 PRO
               </span>
@@ -203,7 +223,7 @@ export const LoginPage: React.FC = () => {
           {/* Header */}
           <div className="text-center space-y-1.5">
             <h1 className="text-2xl font-black text-white tracking-tight">
-              {mode === 'LOGIN' ? 'Acessar o AgencyOS' : 'Solicitar Cadastro'}
+              {mode === 'LOGIN' ? 'Acessar o InfinityRocket' : 'Solicitar Cadastro'}
             </h1>
             <p className="text-xs text-gray-400">
               {mode === 'LOGIN'
@@ -275,14 +295,35 @@ export const LoginPage: React.FC = () => {
 
           {/* Feedback Alerts */}
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-start space-x-2 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span className="leading-relaxed">{error}</span>
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start space-x-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+              <div className="leading-relaxed flex-1">{error}</div>
+            </div>
+          )}
+
+          {isPopupBlocked && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2.5 animate-in fade-in">
+              <div className="flex items-center gap-2 font-bold text-amber-300">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>O navegador bloqueou a janela do Google</span>
+              </div>
+              <p className="text-gray-300 text-[11px] leading-relaxed">
+                Você pode entrar sem pop-up usando o botão abaixo ou liberando os pop-ups no ícone à direita da barra de endereços do seu navegador:
+              </p>
+              <button
+                type="button"
+                onClick={() => handleGoogleSignIn(true)}
+                disabled={isGoogleLoading}
+                className="w-full py-2.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow active:scale-95 disabled:opacity-50"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+                <span>{isGoogleLoading ? 'Redirecionando...' : 'Entrar por Redirecionamento Direto'}</span>
+              </button>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-start space-x-2 animate-in fade-in">
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-start space-x-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
               <span className="leading-relaxed">{successMessage}</span>
             </div>
@@ -541,7 +582,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="h-12 border-t border-gray-800 flex items-center justify-center text-xs text-gray-500">
-        AgencyOS • Marketing Operations & Financial Suite
+        InfinityRocket • Marketing Operations & Financial Suite
       </footer>
     </div>
   );

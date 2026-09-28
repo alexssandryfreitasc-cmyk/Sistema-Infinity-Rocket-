@@ -21,7 +21,7 @@ import {
 export const INITIAL_USERS: User[] = [
   {
     id: 'user-admin-default',
-    name: 'Administrador AgencyOS',
+    name: 'Administrador InfinityRocket',
     email: 'alexssandryfreitasc@gmail.com',
     role: 'ADMIN',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',

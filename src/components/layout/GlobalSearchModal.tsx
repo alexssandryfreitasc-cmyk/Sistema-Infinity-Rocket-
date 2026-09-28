@@ -174,7 +174,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               <div>
                 <p className="text-xs font-semibold text-white">Busca Global Instantânea</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">
-                  Digite para localizar qualquer item em todos os módulos operacionais do AgencyOS.
+                  Digite para localizar qualquer item em todos os módulos operacionais do InfinityRocket.
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-1.5 pt-2 text-[11px]">
@@ -418,7 +418,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         {/* Footer info */}
         <div className="p-3 bg-gray-700 border-t border-gray-700 flex items-center justify-between text-[11px] text-gray-400">
           <span>Navegue com o mouse ou atalho <kbd className="font-mono text-gray-300">ESC</kbd> para fechar</span>
-          <span className="text-indigo-300 font-medium">AgencyOS Search Engine</span>
+          <span className="text-indigo-300 font-medium">InfinityRocket Search Engine</span>
         </div>
       </div>
     </div>

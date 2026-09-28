@@ -22,7 +22,8 @@ import {
   FileCheck2,
   MessageSquare,
   Settings,
-  LogOut
+  LogOut,
+  Rocket
 } from 'lucide-react';
 import { useAgency } from '../../context/AgencyContext';
 
@@ -139,14 +140,14 @@ export const Sidebar: React.FC = () => {
         className="h-16 flex items-center px-6 border-b border-gray-700 cursor-pointer hover:bg-gray-700/30 transition-colors shrink-0"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-            AO
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-indigo-600/30">
+            <Rocket className="w-4 h-4 text-white" />
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight flex items-center">
-              AgencyOS <span className="text-[10px] text-indigo-300 font-medium ml-1.5 border border-[#8da2fb]/30 px-1 py-0.2 rounded leading-none">PRO</span>
+              InfinityRocket <span className="text-[10px] text-indigo-300 font-medium ml-1.5 border border-[#8da2fb]/30 px-1 py-0.2 rounded leading-none">PRO</span>
             </h1>
-            <p className="text-[10px] text-gray-400">Operating System</p>
+            <p className="text-[10px] text-gray-400">Marketing OS</p>
           </div>
         </div>
       </div>

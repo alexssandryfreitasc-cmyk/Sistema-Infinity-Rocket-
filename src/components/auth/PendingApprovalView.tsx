@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, ShieldAlert, LogOut, RefreshCw, CheckCircle2, UserCheck } from 'lucide-react';
+import { Clock, ShieldAlert, LogOut, RefreshCw, CheckCircle2, UserCheck, Rocket } from 'lucide-react';
 import { useAgency } from '../../context/AgencyContext';
 
 export const PendingApprovalView: React.FC = () => {
@@ -18,12 +18,12 @@ export const PendingApprovalView: React.FC = () => {
       {/* Top Bar Brand */}
       <header className="h-16 px-6 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-400 flex items-center justify-center font-black text-black text-base shadow-lg shadow-indigo-500/20">
-            A
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-amber-400 flex items-center justify-center font-black text-white text-base shadow-lg shadow-indigo-500/20">
+            <Rocket className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="font-extrabold text-sm tracking-tight text-white flex items-center space-x-1.5">
-              <span>AgencyOS</span>
+              <span>InfinityRocket</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
                 PENDENTE
               </span>
@@ -110,7 +110,7 @@ export const PendingApprovalView: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-4 text-center text-gray-400 text-[11px] border-t border-gray-800/60">
-        AgencyOS • Governança e Segurança em Tempo Real
+        InfinityRocket • Governança e Segurança em Tempo Real
       </footer>
     </div>
   );

@@ -88,7 +88,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onOpenNewClient 
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-            Painel Executivo • AgencyOS
+            Painel Executivo • InfinityRocket
           </h2>
           <p className="text-gray-400 text-sm mt-1">
             "Nenhum cliente pode ficar esquecido." Pipeline operacional, riscos e receitas em tempo real.

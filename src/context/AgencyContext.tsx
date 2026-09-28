@@ -33,6 +33,8 @@ import {
   db,
   googleProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   fbSignOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -115,7 +117,7 @@ interface AgencyContextType {
   isFirestoreConnected: boolean;
 
   // Real Auth Actions
-  loginWithGoogle: () => Promise<{ success: boolean; message?: string }>;
+  loginWithGoogle: (useRedirect?: boolean) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
   register: (userData: Omit<User, 'id'>, password: string) => Promise<{ success: boolean; message?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
@@ -288,7 +290,7 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           // Bootstrap admin gets ADMIN + ATIVO. All other accounts get COLABORADOR + PENDENTE_APROVACAO.
           profile = {
             id: fbUser.uid,
-            name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador AgencyOS' : 'Novo Usuário'),
+            name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador InfinityRocket' : 'Novo Usuário'),
             email: cleanEmail,
             role: isBootstrapAdmin ? 'ADMIN' : 'COLABORADOR',
             avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -596,8 +598,13 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   // REAL FIREBASE AUTHENTICATION FLOWS
 
   // 1. Google Sign-In
-  const loginWithGoogle = async (): Promise<{ success: boolean; message?: string }> => {
+  const loginWithGoogle = async (useRedirect: boolean = false): Promise<{ success: boolean; message?: string }> => {
     try {
+      if (useRedirect) {
+        await signInWithRedirect(auth, googleProvider);
+        return { success: true };
+      }
+
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
       const cleanEmail = (fbUser.email || '').toLowerCase().trim();
@@ -607,7 +614,7 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (!profile) {
         profile = {
           id: fbUser.uid,
-          name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador AgencyOS' : 'Colaborador'),
+          name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador InfinityRocket' : 'Colaborador'),
           email: cleanEmail,
           role: isBootstrapAdmin ? 'ADMIN' : 'COLABORADOR',
           avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -638,9 +645,35 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return { success: true };
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
+      const code = error?.code || '';
+
+      // If popup is blocked by the browser, attempt automatic redirect as fallback
+      if (code === 'auth/popup-blocked') {
+        try {
+          console.warn('Popup blocked, redirecting user via signInWithRedirect...');
+          await signInWithRedirect(auth, googleProvider);
+          return { success: true };
+        } catch (redirectErr: any) {
+          console.error('Redirect fallback also failed:', redirectErr);
+          return {
+            success: false,
+            message: 'auth/popup-blocked'
+          };
+        }
+      }
+
+      let friendlyMessage = error?.message || 'Falha ao autenticar com a conta Google. Tente novamente.';
+      if (code === 'auth/popup-closed-by-user') {
+        friendlyMessage = 'A janela do Google foi fechada antes de concluir o login.';
+      } else if (code === 'auth/unauthorized-domain') {
+        friendlyMessage = 'Este domínio (Vercel) precisa ser autorizado no Firebase Authentication (Console > Authentication > Configurações > Domínios Autorizados).';
+      } else if (code === 'auth/cancelled-popup-request') {
+        friendlyMessage = 'Solicitação de login cancelada.';
+      }
+
       return {
         success: false,
-        message: error?.message || 'Falha ao autenticar com a conta Google. Tente novamente.'
+        message: friendlyMessage
       };
     }
   };
@@ -662,7 +695,7 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (!profile) {
         profile = {
           id: fbUser.uid,
-          name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador AgencyOS' : 'Colaborador'),
+          name: fbUser.displayName || (isBootstrapAdmin ? 'Administrador InfinityRocket' : 'Colaborador'),
           email: cleanEmail,
           role: isBootstrapAdmin ? 'ADMIN' : 'COLABORADOR',
           avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -885,7 +918,7 @@ export const AgencyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         id: `task-${newId}-1`,
         clientId: newId,
         title: 'Enviar E-mail de Boas-Vindas & Abertura do Portal',
-        description: 'Enviar convite de acesso seguro ao AgencyOS e link do grupo de WhatsApp.',
+        description: 'Enviar convite de acesso seguro ao InfinityRocket e link do grupo de WhatsApp.',
         assignedToId: currentUser.id,
         createdById: currentUser.id,
         priority: 'ALTA',
